@@ -264,6 +264,16 @@ func processFormatAndProtocol() error {
 		if protocol == "auto" {
 			protocol = "http"
 		}
+	case "timescale":
+		if protocol != "auto" {
+			return errors.New("Only the \"auto\" protocol (PostgreSQL:Timescale) is supported with Timescale")
+		}
+		protocol = "timescale"
+		localFormatter = formatter.NewTimescaleFormatter()
+
+		if len(endpoint) == 0 {
+			endpoint = "postgres://postgres:postgresqltimescaletests@localhost/tsdb?sslmode=disable"
+		}
 	default:
 		return errors.New("The specified format is invalid")
 	}
@@ -458,6 +468,13 @@ func spawnWorker(id int, statsChan chan<- emissionStat) {
 		case "dry-run":
 			workerPublisher = publisher.NewLogPublisher("na")
 		}
+	case "timescale":
+		switch protocol {
+		case "timescale":
+			workerPublisher = publisher.NewTimescalePublisher(endpoint)
+		case "dry-run":
+			workerPublisher = publisher.NewLogPublisher("na")
+		}
 	}
 
 	workerGeneratorsArr := cloneDefaultGenerators(workerMetricNamespacePrefix, workerMetricNamespaceSuffix, workerTags)
@@ -483,7 +500,11 @@ func spawnWorker(id int, statsChan chan<- emissionStat) {
 
 			var publishErr error
 			formattedMetric := localFormatter.FormatData(&metricArr)
-			publishErr = workerPublisher.PublishBytes(formattedMetric)
+			if format == "timescale" {
+				publishErr = workerPublisher.PublishMetrics(&metricArr)
+			} else {
+				publishErr = workerPublisher.PublishBytes(formattedMetric)
+			}
 
 			if publishErr != nil {
 				metricsUnsucessfullyStats++
