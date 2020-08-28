@@ -2,8 +2,12 @@ module github.com/aleveille/lagrande
 
 go 1.14
 
+replace github.com/aleveille/telegraf => ../telegraf
+
 require (
-	github.com/google/go-cmp v0.4.0 // indirect
+	github.com/aleveille/telegraf v0.0.0-00010101000000-000000000000
+	github.com/google/go-cmp v0.5.2 // indirect
+	github.com/influxdata/telegraf v1.15.2
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.6.0
